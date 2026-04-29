@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Flat directories**: `raw/` and `wiki/` no longer use subdirectories. Pages are categorized by frontmatter `type:` and `index.md` sections instead of folders.
+- **Inlined conventions**: each operation skill (`wiki-ingest`, `wiki-query`, `wiki-lint`) now carries the full conventions (marker, resolution probe, cache, bootstrap, layout, frontmatter, wikilinks, index/log format) inline under its own `## Conventions` section.
+
+### Removed
+
+- **`wiki-conventions` skill**: deleted. Its content is now inlined into each operation skill so they're self-contained.
+
 ## [0.1.0] - 2026-04-27
 
 ### Added

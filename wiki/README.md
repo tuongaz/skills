@@ -6,14 +6,15 @@ Based on the [LLM Wiki pattern](https://jackclark.net/llm-wiki/): a persistent, 
 
 ## What it does
 
-The plugin ships **four skills** that auto-load based on what you say:
+The plugin ships **three skills** that auto-load based on what you say:
 
 | Skill | Triggers on phrasings like |
 |---|---|
-| **`wiki-ingest`** | "add this to the wiki", "ingest `foo.md`", "summarize this paper into my notes", "process `raw/articles/bar.md`" |
+| **`wiki-ingest`** | "add this to the wiki", "ingest `foo.md`", "summarize this paper into my notes", "process `raw/bar.md`" |
 | **`wiki-query`** | "what does my wiki say about X?", "ask the wiki", "according to my notes…", any factual question asked inside a wiki directory |
 | **`wiki-lint`** | "lint the wiki", "health-check the wiki", "find orphans / contradictions / red links" |
-| **`wiki-conventions`** | shared reference, auto-loaded by the three operation skills (and triggers on questions about the layout/format) |
+
+Each skill carries the full conventions inline (layout, frontmatter, wikilinks, index/log format) so it operates self-contained — no separate reference skill to load first.
 
 There are no slash commands and no subagent. Skills load when the description matches what you're doing. You just talk to Claude in a wiki directory.
 
@@ -63,9 +64,9 @@ Claude Code auto-discovers project-scoped plugins when launched from inside `~/m
 
 After install, in Claude Code, run `/plugin` and confirm `wiki` is enabled. To verify a skill triggers correctly, ask:
 
-> "What is the wiki convention for cross-linking?"
+> "Lint my wiki."
 
-Claude should announce that it's loading the `wiki-conventions` skill before answering.
+Claude should announce that it's loading the `wiki-lint` skill before responding (and abort cleanly if there's no wiki at the current location).
 
 ## Bootstrapping a new wiki
 
@@ -75,8 +76,8 @@ Claude should announce that it's loading the `wiki-conventions` skill before ans
 4. Tell Claude something like *"ingest `some-article.md` into the wiki"*. The `wiki-ingest` skill loads. If this is a fresh directory, the skill runs its resolution probe and asks whether to initialize a wiki here. On approval it scaffolds (note: **never** writes `CLAUDE.md` — that's yours):
    - `index.md` — catalog of pages.
    - `log.md` — chronological record of operations.
-   - `raw/` — immutable source files.
-   - `wiki/entities/`, `wiki/concepts/`, `wiki/sources/` — LLM-generated pages.
+   - `raw/` — immutable source files (flat — no subdirectories).
+   - `wiki/` — LLM-generated pages (flat — no subdirectories; pages classified by `type:` frontmatter).
 
    You can optionally add a `CLAUDE.md` with a `## Wiki` section at the wiki root to customize behavior — the plugin reads it but never modifies it.
 5. Browse the result in any markdown viewer — Obsidian, Logseq, Foam, Dendron, VS Code, plain `cat`. The wiki is just a directory of markdown files — keep it under git and commit after ingests to track how your understanding evolves.
@@ -88,12 +89,11 @@ my-wiki/
 ├── CLAUDE.md              # optional; user-owned, never written by the plugin
 ├── index.md               # catalog
 ├── log.md                 # chronological record
-├── raw/                   # immutable sources
-└── wiki/                  # LLM-maintained pages
-    ├── entities/
-    ├── concepts/
-    └── sources/
+├── raw/                   # immutable sources (flat — no subdirectories)
+└── wiki/                  # LLM-maintained pages (flat — no subdirectories)
 ```
+
+Pages under `wiki/` are categorized by `type:` frontmatter (`entity`, `concept`, `source-summary`, `query`, `overview`), not by folder.
 
 ## Conventions
 
@@ -106,13 +106,13 @@ tags: [tag1, tag2]
 created: 2026-04-21
 updated: 2026-04-21
 sources:
-  - raw/articles/foo.md
+  - raw/foo.md
 ---
 ```
 
 **Cross-links**:
 - Wiki-to-wiki: `[[slug]]` (Obsidian wikilinks; use `[[slug|Display]]` for prose)
-- Wiki-to-raw: `[Chen 2024](raw/papers/chen-2024.pdf)`
+- Wiki-to-raw: `[Chen 2024](raw/chen-2024.pdf)`
 
 **Log entries** begin with a predictable header so they're grep-parseable:
 
@@ -120,7 +120,7 @@ sources:
 grep "^## \[" log.md | tail -10
 ```
 
-Full spec: see `skills/wiki-conventions/SKILL.md`. Each wiki instance's own `CLAUDE.md` may override any default.
+Full spec: each operation skill (`wiki-ingest`, `wiki-query`, `wiki-lint`) carries the conventions inline under its `## Conventions` section. Each wiki instance's own `CLAUDE.md` may override any default.
 
 ## How it fits together
 
@@ -137,8 +137,8 @@ Full spec: see `skills/wiki-conventions/SKILL.md`. Each wiki instance's own `CLA
         │   • wiki-ingest              │
         │   • wiki-query               │
         │   • wiki-lint                │
-        │ which load wiki-conventions  │
-        │ as shared reference.         │
+        │ each carrying conventions    │
+        │ inline (self-contained).     │
         └──────────────┬───────────────┘
                        ▼
         ┌──────────────────────────────┐
@@ -167,7 +167,6 @@ wiki/
 ├── .claude-plugin/
 │   └── plugin.json
 ├── skills/
-│   ├── wiki-conventions/SKILL.md
 │   ├── wiki-ingest/SKILL.md
 │   ├── wiki-query/SKILL.md
 │   └── wiki-lint/SKILL.md
