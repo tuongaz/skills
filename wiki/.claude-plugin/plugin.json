@@ -1,0 +1,19 @@
+{
+  "name": "wiki",
+  "version": "0.1.0",
+  "description": "Turns Claude Code into a disciplined maintainer of a personal markdown wiki. Ingest sources, query the wiki with citations, and lint for health.",
+  "author": {
+    "name": "Tuong Le",
+    "email": "tuong@wisebit.com"
+  },
+  "homepage": "https://github.com/<owner>/wiki",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/<owner>/wiki.git"
+  },
+  "bugs": {
+    "url": "https://github.com/<owner>/wiki/issues"
+  },
+  "keywords": ["wiki", "knowledge-base", "obsidian", "logseq", "markdown", "memex", "notes", "pkm"],
+  "license": "MIT"
+}
