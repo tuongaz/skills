@@ -19,6 +19,8 @@ designer and a first-time user would notice.
 
 ## Do not report
 
+- anything listed under `knownDifferences` in the brief — those are accepted on purpose
+
 - spacing or alignment differences under about 4 px; exact position of copy; icon choice
 - font-size differences of a step or less; minor weight differences
 - differences in the mock's fixture data (names, numbers and dates in a mock are placeholders)
@@ -65,4 +67,6 @@ Return ONLY this JSON object, no prose around it:
 
 Cite the image number and the [N] label whenever a labelled element is involved: the person
 acting on your findings cannot see the image. When unsure whether something is a defect, include
-it with confidence "low" rather than omit it. Be specific and brief.
+it with confidence "low" rather than omit it. If an element is too small in the image to judge
+(a control under about 40 px), say so in "what" with confidence "low" instead of guessing — the
+reviewer can send a close-up. Be specific and brief.

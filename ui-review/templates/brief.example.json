@@ -5,5 +5,6 @@
   "surface": "agent desktop",
   "viewport": "1440x900 @2x",
   "mock": true,
+  "knownDifferences": ["Build adds a Tickets tab the mock predates", "Mock names and dates are fixture data"],
   "persona": "support agent"
 }

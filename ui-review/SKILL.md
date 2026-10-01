@@ -34,8 +34,12 @@ No profile → ask the user for the URL and viewport, and review with the generi
 2. **Spec before browser.** Read the plan or ticket that names the expected states and, for a
    mock, the CHOSEN frame or direction. Never infer the target from the mock alone.
 3. **Capture** with `scripts/capture.sh <session> <run-dir> <name> [selector]` at the surface's
-   viewport, **tool sandbox DISABLED**. It writes the annotated PNG, the `[N]`→`@eN` legend and
-   the source sidecar `review.py` requires.
+   viewport, **tool sandbox DISABLED**. It writes a clean PNG (what the model sees), an annotated
+   copy for humans, the `[N]`→`@eN` legend with boxes, and the source sidecar `review.py` requires.
+   **Two grains, both needed:** the whole fold (or a tall viewport) for layout, order and states;
+   a **selector crop** for every control-level check — a clipped label, a wrong glyph, a missing
+   key. A whole page is downscaled before send and a 40 px control becomes unreadable; a crop
+   keeps full detail. Measured: the clipped button was invisible on the fold and obvious on the crop.
 4. **Brief.** `<run-dir>/brief.json` with the fixed fields of
    [templates/brief.example.json](templates/brief.example.json) — no justification field, so the
    implementer cannot prime the reviewer.
@@ -68,6 +72,10 @@ No profile → ask the user for the URL and viewport, and review with the generi
 - **Brief = fixed fields.** No prose about intent.
 - **Vendor and model names** stay in the run log and internal notes, never in client-facing copy.
 - **Cost is visible.** Every call prints tokens and dollars; images are downscaled before send.
+  Default model `qwen/qwen3-vl-32b-instruct` (~$0.001 per call, 20–60 s): in the bake-off it was
+  the most grounded on tall pages and the only one to see a clipped label on a crop. Gemini 2.5
+  Flash is 5× faster, caught a serif heading unprompted, and hallucinated on crops. Override with
+  `UI_REVIEW_MODEL`; `review.py models` prints live prices.
 
 ## Red flags (each seen in a no-skill baseline run)
 
@@ -75,6 +83,7 @@ No profile → ask the user for the URL and viewport, and review with the generi
 | --- | --- |
 | "I'll just open the screenshot and compare" | 13 PNGs opened in one baseline run. That is the cost this skill removes. Send them. |
 | "`screenshot --full` shows the whole page" | App shells that scroll an inner container return the fold. Grow the viewport. |
+| "The model said the control is fine" (on a whole-page shot) | Below ~40 px it cannot see it. Crop the region and ask again. |
 | "`wait 3000`" | Wait on text. A sleep is a flake with a timer. |
 | "The mock's first frame is the one" | The spec names the chosen direction. Read it first. |
 | "This may be deliberate, I'll file it as minor anyway" | Spec decides. Silent spec → accept batch, not a finding. |

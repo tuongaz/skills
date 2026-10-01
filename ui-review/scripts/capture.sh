@@ -9,8 +9,9 @@
 #   capture.sh verify-myapp .ui-review/run1 01-record
 #   capture.sh verify-myapp .ui-review/run1 02-dialog '[role=dialog]'
 #
-# Writes <out-dir>/<name>.png (annotated, labels [N] = refs @eN), <name>.legend.json,
-# <name>.src.json {url, viewport, capturedAt}. Needs the tool sandbox DISABLED (else the
+# Writes <out-dir>/<name>.png (CLEAN — what the model sees), <name>.annotated.png (labels [N] =
+# refs @eN, for humans), <name>.legend.json (labels + boxes, sent as text), <name>.src.json
+# {url, viewport, capturedAt}. Needs the tool sandbox DISABLED (else the
 # file is silently not written) — check the printed size.
 set -euo pipefail
 SESSION="${1:?session}"; OUT="${2:?out dir}"; NAME="${3:?name}"; SEL="${4:-}"
@@ -27,12 +28,21 @@ esac
 
 VP=$("${AB[@]}" eval 'JSON.stringify({w:window.innerWidth,h:window.innerHeight,dpr:window.devicePixelRatio})' 2>/dev/null | tr -d '\r' | tail -1)
 
-# --annotate --json prints the legend ([N] -> @eN role/name) and data.path, where the image landed.
-"${AB[@]}" screenshot ${SEL:+"$SEL"} "$PNG" --annotate --json > "$OUT/$NAME.legend.json" 2>/dev/null || true
+# The model gets the CLEAN image: numbered overlays hide what they label (a clipped button sits
+# under its own box). The legend ([N] -> @eN, role, name, box) travels as TEXT; the annotated copy
+# is kept for humans. --json reports data.path, where the image really landed.
+"${AB[@]}" screenshot ${SEL:+"$SEL"} "$PNG" --json > "$OUT/.$NAME.clean.json" 2>/dev/null || true
 if [ ! -s "$PNG" ]; then
-  SAVED=$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1])).get("data") or {}).get("path") or "")' "$OUT/$NAME.legend.json" 2>/dev/null || true)
+  SAVED=$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1])).get("data") or {}).get("path") or "")' "$OUT/.$NAME.clean.json" 2>/dev/null || true)
   [ -n "$SAVED" ] && [ -s "$SAVED" ] && mv "$SAVED" "$PNG"
 fi
+ANN="$OUT/$NAME.annotated.png"
+"${AB[@]}" screenshot ${SEL:+"$SEL"} "$ANN" --annotate --json > "$OUT/$NAME.legend.json" 2>/dev/null || true
+if [ ! -s "$ANN" ]; then
+  SAVED=$(python3 -c 'import json,sys;print((json.load(open(sys.argv[1])).get("data") or {}).get("path") or "")' "$OUT/$NAME.legend.json" 2>/dev/null || true)
+  [ -n "$SAVED" ] && [ -s "$SAVED" ] && mv "$SAVED" "$ANN"
+fi
+rm -f "$OUT/.$NAME.clean.json"
 [ -s "$PNG" ] || { echo "✗ $PNG not written — is the tool sandbox disabled?" >&2; exit 3; }
 
 printf '{"url":%s,"viewport":%s,"capturedAt":"%s"}\n' \

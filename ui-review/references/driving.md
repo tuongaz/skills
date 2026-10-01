@@ -33,8 +33,11 @@ agent-browser --session $S set viewport 1440 2200 2 # a long page whose app shel
 ~/.claude/skills/ui-review/scripts/capture.sh $S <run-dir> 02-dialog '[role=dialog]'
 ```
 
-Writes the PNG (annotated: `[N]` = ref `@eN`), the legend and a `.src.json` sidecar with the
-source URL. **Run it with the tool sandbox DISABLED** — sandboxed, `agent-browser screenshot`
+Writes a clean PNG (the model's copy), an `.annotated.png` (labels `[N]` = ref `@eN`, for
+humans), the legend with boxes and a `.src.json` sidecar with the source URL. **Crop by
+selector for any control-level check** — a whole page is downscaled before send and a small
+control disappears; a crop keeps full detail. Give the region an id first if it has none:
+`eval "document.querySelector('h1').closest('header').id='crop'"` then `'#crop'`. **Run it with the tool sandbox DISABLED** — sandboxed, `agent-browser screenshot`
 exits 0 and writes nothing. A **relative** path is resolved against the agent-browser daemon,
 not your shell, and lands in `~/.agent-browser/tmp/`; the helper passes absolute paths and
 falls back to the JSON-reported path. It prints the byte size so you notice either failure.

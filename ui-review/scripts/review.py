@@ -5,7 +5,7 @@
         --brief brief.json --rubric ~/.claude/skills/ui-review/references/rubric.md \
         [--context .claude/ui-review.md] \
         --image .ui-review/run1/01-record.png [--image ...] [--pair mock.png build.png ...] \
-        [--model google/gemini-2.5-flash-lite] [--out .ui-review/run1]
+        [--model qwen/qwen3-vl-32b-instruct] [--out .ui-review/run1]
 
     uv run python …/review.py ask --image shot.png "Is there a backspace key on the keypad?"
     uv run python …/review.py models                  # candidate vision models + live price
@@ -32,7 +32,7 @@ import httpx
 from PIL import Image
 
 API = "https://openrouter.ai/api/v1"
-DEFAULT_MODEL = os.environ.get("UI_REVIEW_MODEL", "google/gemini-2.5-flash-lite")
+DEFAULT_MODEL = os.environ.get("UI_REVIEW_MODEL", "qwen/qwen3-vl-32b-instruct")
 MAX_EDGE = int(os.environ.get("UI_REVIEW_MAX_EDGE", "1568"))  # px, long edge after downscale
 JPEG_Q = int(os.environ.get("UI_REVIEW_JPEG_QUALITY", "80"))
 LOCAL = re.compile(
@@ -95,7 +95,11 @@ def encode(png: pathlib.Path) -> tuple[str, tuple[int, int], int]:
 
 
 def legend_text(png: pathlib.Path) -> str:
-    """The annotate legend capture.sh saved: `data.annotations[]` with number/ref/role/name."""
+    """The annotate legend capture.sh saved: `data.annotations[]` with number/ref/role/name/box.
+
+    The image the model sees is CLEAN (no overlay), so each label carries its box in CSS px —
+    the model cites [N] by position.
+    """
     lg = png.with_suffix(".legend.json")
     if not lg.exists():
         return ""
@@ -104,12 +108,24 @@ def legend_text(png: pathlib.Path) -> str:
     except json.JSONDecodeError:
         return ""
     ann = ((d.get("data") or {}).get("annotations")) or d.get("annotations") or []
-    lines = [
-        f"[{a.get('number')}] @{a.get('ref')} {a.get('role', '')} {a.get('name', '')}".rstrip()
-        for a in ann[:150]
-        if a.get("number")
-    ]
-    return "Element labels in this image ([N] = element ref):\n" + "\n".join(lines) if lines else ""
+    lines = []
+    for a in ann[:150]:
+        if not a.get("number"):
+            continue
+        b = a.get("box") or {}
+        pos = ""
+        if b:
+            x, y, w, h = (b.get(k, 0) for k in ("x", "y", "width", "height"))
+            pos = f" @({x:.0f},{y:.0f} {w:.0f}x{h:.0f})"
+        lines.append(
+            f"[{a['number']}] @{a.get('ref')} {a.get('role', '')} {a.get('name', '')}{pos}".rstrip()
+        )
+    if not lines:
+        return ""
+    return (
+        "Interactive elements in this image, as [N] @ref role name @(x,y wxh) in CSS px from the"
+        " top-left (the image has NO overlay; cite [N] by position):\n" + "\n".join(lines)
+    )
 
 
 def image_part(b64: str) -> dict:
@@ -125,6 +141,9 @@ def call(model: str, messages: list, max_tokens: int, out: pathlib.Path | None, 
         "usage": {"include": True},
         "provider": {"sort": "price", "data_collection": "deny"},
     }
+    # Reasoning models burn the budget thinking and return no JSON; cap the effort when asked.
+    if os.environ.get("UI_REVIEW_REASONING"):
+        body["reasoning"] = {"effort": os.environ["UI_REVIEW_REASONING"]}
     t0 = time.time()
     with httpx.Client(timeout=180) as c:
         r = c.post(
@@ -341,7 +360,7 @@ def main() -> int:
         help="a mock/build pair (repeatable)",
     )
     r.add_argument("--model", default=DEFAULT_MODEL)
-    r.add_argument("--max-tokens", type=int, default=2500)
+    r.add_argument("--max-tokens", type=int, default=4000)
     r.add_argument("--out", help="run directory for request/response/findings (default: none)")
     r.set_defaults(fn=cmd_review)
     q = sub.add_parser("ask", help="one question about one image")
