@@ -1,0 +1,9 @@
+{
+  "feature": "Customer record — Overview tab (mock: design/customer-record.html, frame B)",
+  "userGoal": "A support agent opens a customer and checks plan, address and open tickets before replying",
+  "stateShown": "Record loaded for an active customer with one open ticket; no edits in progress",
+  "surface": "agent desktop",
+  "viewport": "1440x900 @2x",
+  "mock": true,
+  "persona": "support agent"
+}
