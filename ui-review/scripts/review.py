@@ -38,10 +38,10 @@ JPEG_Q = int(os.environ.get("UI_REVIEW_JPEG_QUALITY", "80"))
 LOCAL = re.compile(
     r"^(https?://(localhost|127\.0\.0\.1|[a-z0-9.-]+\.localhost)(:\d+)?(/|$)|file:///)", re.I
 )
-CANDIDATES = (  # the bake-off shortlist; `models` prints live prices for these
+CANDIDATES = (  # the bake-off shortlist, default first; `models` prints live prices for these
+    "qwen/qwen3-vl-32b-instruct",
     "google/gemini-2.5-flash-lite",
     "google/gemini-2.5-flash",
-    "qwen/qwen3-vl-32b-instruct",
     "qwen/qwen3-vl-8b-instruct",
     "openai/gpt-5-nano",
     "openai/gpt-5-mini",

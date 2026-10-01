@@ -35,8 +35,9 @@ agent-browser --session $S set viewport 1440 2200 2 # a long page whose app shel
 
 Writes a clean PNG (the model's copy), an `.annotated.png` (labels `[N]` = ref `@eN`, for
 humans), the legend with boxes and a `.src.json` sidecar with the source URL. **Crop by
-selector for any control-level check** — a whole page is downscaled before send and a small
-control disappears; a crop keeps full detail. Give the region an id first if it has none:
+selector for any control-level check, then ASK about the control** (`review.py ask`) — a whole
+page is downscaled before send and a small control disappears; a crop keeps full detail, and the
+open review still does not look for a clipped label on its own. Give the region an id first if it has none:
 `eval "document.querySelector('h1').closest('header').id='crop'"` then `'#crop'`. **Run it with the tool sandbox DISABLED** — sandboxed, `agent-browser screenshot`
 exits 0 and writes nothing. A **relative** path is resolved against the agent-browser daemon,
 not your shell, and lands in `~/.agent-browser/tmp/`; the helper passes absolute paths and

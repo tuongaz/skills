@@ -39,7 +39,8 @@ No profile → ask the user for the URL and viewport, and review with the generi
    **Two grains, both needed:** the whole fold (or a tall viewport) for layout, order and states;
    a **selector crop** for every control-level check — a clipped label, a wrong glyph, a missing
    key. A whole page is downscaled before send and a 40 px control becomes unreadable; a crop
-   keeps full detail. Measured: the clipped button was invisible on the fold and obvious on the crop.
+   keeps full detail. Measured: a clipped button was invisible to every model on the fold, and on
+   the crop it surfaced only through a direct question (`ask`), never in an open review.
 4. **Brief.** `<run-dir>/brief.json` with the fixed fields of
    [templates/brief.example.json](templates/brief.example.json) — no justification field, so the
    implementer cannot prime the reviewer.
@@ -53,6 +54,10 @@ No profile → ask the user for the URL and viewport, and review with the generi
    dollars the call cost.
 6. **Confirm from text** before acting on a blocker/major: DOM snapshot, `document.body.innerText`,
    the server log, a database row. Unconfirmable → `review.py ask --image <png> "<question>"`.
+   **Control-level checks are direct questions on a crop**, one per control ("is the Edit label
+   cut off?", "is there a backspace key?"): the open review reports layout, order and states and
+   does not find a 40 px defect on its own. Ask what the CLAUDE.md "things only eyes catch" list
+   would ask.
    "May be deliberate" → the spec decides; a silent spec sends it to the accept batch, never to a fix.
 7. **Classify once:** wrong fact / broken behaviour / permission leak / vocabulary break → **fix**;
    a visible meaning or flow gap → **fix once**; pixel, spacing, placement, icon → **accept batch**.
@@ -72,10 +77,11 @@ No profile → ask the user for the URL and viewport, and review with the generi
 - **Brief = fixed fields.** No prose about intent.
 - **Vendor and model names** stay in the run log and internal notes, never in client-facing copy.
 - **Cost is visible.** Every call prints tokens and dollars; images are downscaled before send.
-  Default model `qwen/qwen3-vl-32b-instruct` (~$0.001 per call, 20–60 s): in the bake-off it was
-  the most grounded on tall pages and the only one to see a clipped label on a crop. Gemini 2.5
-  Flash is 5× faster, caught a serif heading unprompted, and hallucinated on crops. Override with
-  `UI_REVIEW_MODEL`; `review.py models` prints live prices.
+  Default model `qwen/qwen3-vl-32b-instruct` (~$0.001 per call, 15–60 s): in the bake-off it was
+  the most grounded on tall pages, and on a crop it confirmed a clipped label and a serif heading
+  when asked directly. Gemini 2.5 Flash is faster, caught the serif unprompted on a fold, missed
+  the clipping even when asked, and hallucinated on crops. No model found the clipped label in an
+  open review. Override with `UI_REVIEW_MODEL`; `review.py models` prints live prices.
 
 ## Red flags (each seen in a no-skill baseline run)
 
@@ -83,7 +89,7 @@ No profile → ask the user for the URL and viewport, and review with the generi
 | --- | --- |
 | "I'll just open the screenshot and compare" | 13 PNGs opened in one baseline run. That is the cost this skill removes. Send them. |
 | "`screenshot --full` shows the whole page" | App shells that scroll an inner container return the fold. Grow the viewport. |
-| "The model said the control is fine" (on a whole-page shot) | Below ~40 px it cannot see it. Crop the region and ask again. |
+| "The open review came back clean, so the controls are fine" | It does not look for them. Crop the region and ask one direct question per control. |
 | "`wait 3000`" | Wait on text. A sleep is a flake with a timer. |
 | "The mock's first frame is the one" | The spec names the chosen direction. Read it first. |
 | "This may be deliberate, I'll file it as minor anyway" | Spec decides. Silent spec → accept batch, not a finding. |
